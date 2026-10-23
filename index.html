@@ -1,0 +1,498 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#05070A">
+<title>EVA</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#05070A;--n1:#0A1931;--n2:#102542;--blue:#00D4FF;--soft:#8AA8C8;--gray:#6B7A90;--div:#1A2F4D;--card:rgba(15,31,58,.7);--red:#FF5C7A;--ok:#3DDC97}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;height:100%;background:var(--bg);color:#fff;font-family:Inter,system-ui,sans-serif}
+body{background:linear-gradient(180deg,var(--bg),var(--n1) 55%,var(--n2));display:flex;flex-direction:column;height:100dvh;overflow:hidden}
+#city{position:fixed;inset:auto 0 0 0;height:45%;width:100%;opacity:.15;pointer-events:none;z-index:0}
+#app{position:relative;z-index:1;display:flex;flex-direction:column;flex:1;min-height:0}
+h1,h2{font-family:'Space Grotesk',sans-serif;margin:0}
+.screen{display:none;flex:1;min-height:0;flex-direction:column}.screen.on{display:flex}
+/* glass card with 4 HUD brackets */
+.glass{position:relative;background:var(--card);border:1px solid var(--blue);border-radius:16px;padding:12px 14px;box-shadow:0 0 8px var(--blue);backdrop-filter:blur(8px)}
+.glass.br::after{content:"";position:absolute;inset:3px;border:1.5px solid var(--blue);pointer-events:none;
+ -webkit-mask:linear-gradient(#000 0 0) top left/8px 8px no-repeat,linear-gradient(#000 0 0) top right/8px 8px no-repeat,linear-gradient(#000 0 0) bottom left/8px 8px no-repeat,linear-gradient(#000 0 0) bottom right/8px 8px no-repeat;
+ mask:linear-gradient(#000 0 0) top left/8px 8px no-repeat,linear-gradient(#000 0 0) top right/8px 8px no-repeat,linear-gradient(#000 0 0) bottom left/8px 8px no-repeat,linear-gradient(#000 0 0) bottom right/8px 8px no-repeat}
+.glass.err{border-color:var(--red);box-shadow:0 0 8px var(--red)}
+.top{text-align:center;padding:8px 0 4px}
+.top img{width:80px;height:80px;border-radius:20px;box-shadow:0 0 14px var(--blue)}
+.top h1{font-size:28px;letter-spacing:6px;font-weight:700;margin-top:4px}
+.top small{color:var(--soft);font-size:14px}
+#chat{flex:1;overflow-y:auto;padding:4px 16px}
+.m{margin:7px 0;max-width:86%}.m.u{margin-left:auto}.m.u .glass{padding:10px 12px;font-size:14px;background:rgba(0,212,255,.1);border-color:var(--soft);box-shadow:none;color:#E0EFFF}
+.m .glass{font-size:16px;line-height:1.45;white-space:pre-wrap;word-wrap:break-word}
+.meta{display:flex;gap:12px;align-items:center;font-size:11px;color:var(--gray);margin-top:3px}.m.u .meta{justify-content:flex-end}
+.meta button{background:none;border:0;color:var(--gray);font-size:13px;padding:0}
+.bottom{padding:6px 16px calc(8px + env(safe-area-inset-bottom))}
+.wave{display:flex;gap:3px;height:26px;align-items:center;justify-content:center}
+.wave i{width:3px;height:100%;background:var(--blue);border-radius:2px;transform:scaleY(.1);box-shadow:0 0 4px var(--blue)}
+.lrow{display:flex;justify-content:space-between;align-items:center;margin:6px 0;font-size:14px;color:var(--blue)}
+.lrow.err{color:var(--red)}.lrow button{background:none;border:0;color:var(--blue);font-size:24px}
+.bar{display:flex;align-items:center;background:var(--n1);border:1px solid var(--blue);border-radius:24px;padding:0 16px}
+.bar input{flex:1;background:none;border:0;outline:0;color:#fff;font:15px Inter;padding:12px 0;min-width:0}
+.bar input::placeholder{color:var(--soft)}.bar button{background:none;border:0;color:var(--blue);font-size:20px}
+.banner{margin:0 16px 6px;padding:10px 12px;border:1px solid var(--blue);border-radius:14px;background:rgba(0,212,255,.08);display:none;justify-content:space-between;align-items:center;gap:8px;font-size:14px}
+.banner.on{display:flex}
+nav{display:flex;background:rgba(5,7,10,.92);border-top:1px solid var(--div);padding:6px 0 calc(6px + env(safe-area-inset-bottom))}
+nav button{flex:1;background:none;border:0;color:var(--gray);font:11px Inter;display:flex;flex-direction:column;align-items:center;gap:2px}
+nav button span{font-size:20px}nav button.on{color:var(--blue)}
+.hdr{text-align:center;padding:10px 0}.hdr h2{font-size:20px}.hdr small{color:var(--blue);font-size:14px}
+.scroll{flex:1;overflow-y:auto;padding:0 16px 24px}
+.btn{border:1px solid var(--blue);background:none;color:var(--blue);border-radius:20px;padding:8px 18px;font:700 14px Inter;margin:4px 6px 4px 0}
+.btn.sm{padding:5px 12px;font-size:12px}.btn.red{border-color:var(--red);color:var(--red)}
+.chip{display:inline-block;border:1px solid var(--div);color:var(--soft);border-radius:16px;padding:6px 12px;margin:0 8px 8px 0;font-size:13px}
+.chip.on{border-color:var(--blue);color:var(--blue);background:rgba(0,212,255,.15)}
+.lbl{color:var(--gray);font-weight:700;font-size:12px;letter-spacing:2px;margin:14px 0 8px}
+input.f,select.f{width:100%;background:var(--n1);border:1px solid var(--div);border-radius:14px;color:#fff;padding:11px 14px;font:15px Inter;margin-bottom:8px}
+.card{margin-bottom:12px}.card h3{margin:0;font-size:15px;display:flex;justify-content:space-between;gap:8px}
+.card p{color:var(--soft);font-size:13px;line-height:1.5;margin:8px 0}
+.st{font-size:12px;font-weight:400;color:var(--gray)}.st.on{color:var(--ok)}.st.bad{color:var(--red)}
+.mem{cursor:pointer;margin-bottom:12px}.mem b{font-size:15px}.mem p{margin:4px 0;color:var(--soft);font-size:13px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.mem .r{display:flex;align-items:center;gap:10px;font-size:11px;color:var(--gray)}.mem .r span{flex:1}.mem .r button{background:none;border:0;font-size:15px;padding:4px}
+.overlay{position:fixed;inset:0;background:var(--bg);z-index:20;display:none;flex-direction:column;align-items:center;justify-content:center;padding:20px;overflow-y:auto}
+.overlay.on{display:flex}
+#onb{justify-content:flex-start;background:linear-gradient(180deg,var(--bg),var(--n1),var(--n2))}
+#live img{width:190px;height:190px;border-radius:40px;box-shadow:0 0 30px var(--blue);transition:transform .2s}
+#live.speaking img{animation:pulse 1s ease-in-out infinite}
+@keyframes pulse{50%{transform:scale(1.12);box-shadow:0 0 50px var(--blue)}}
+.circ{width:64px;height:64px;border-radius:50%;border:1px solid var(--blue);background:var(--card);color:var(--blue);font-size:26px}
+.circ.red{border-color:var(--red);color:var(--red)}
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.78);display:none;align-items:center;justify-content:center;z-index:30}
+.modal.on{display:flex}.modal .glass{width:88%;max-width:420px}
+#toast{position:fixed;left:50%;bottom:90px;transform:translateX(-50%);background:var(--n1);border:1px solid var(--blue);border-radius:14px;padding:10px 16px;font-size:13px;z-index:40;display:none;max-width:88%}
+</style>
+</head>
+<body>
+<svg id="city" viewBox="0 0 400 300" preserveAspectRatio="xMidYMax slice" fill="none" stroke="#00D4FF" stroke-width=".8"></svg>
+
+<div id="app">
+<!-- CHAT -->
+<section class="screen on" id="s-chat">
+  <div class="top"><img src="data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%2305101f'/%3E%3Cpath d='M50 10 58 42 90 50 58 58 50 90 42 58 10 50 42 42Z' fill='none' stroke='%23bfe9ff' stroke-width='2'/%3E%3C/svg%3E" alt="EVA"><h1>EVA</h1><small id="status">AI Assistant • Online</small></div>
+  <div id="chat"></div>
+  <div class="banner" id="b-offer"><span id="b-offer-t"></span><span><button class="btn sm" id="b-pause">Pause</button><button class="btn sm" id="b-keep">Keep chatting</button></span></div>
+  <div class="banner" id="b-pause-on"><span id="b-pause-t"></span></div>
+  <div class="banner" id="b-check"><span>Are we good now?</span><span><button class="btn sm" id="b-yes">Yes</button><button class="btn sm" id="b-no">No</button></span></div>
+  <div class="bottom">
+    <div class="wave" id="wave"></div>
+    <div class="lrow" id="lrow"><span id="phase">Ready</span><button onclick="startLive()" title="Live voice">🎙</button></div>
+    <div class="bar"><input id="inp" placeholder="Ask EVA anything..." enterkeyhint="send" autocomplete="off"><button onclick="send()">➤</button></div>
+  </div>
+</section>
+<!-- MEMORY -->
+<section class="screen" id="s-mem">
+  <div class="hdr"><h2>Memory</h2><small>EVA • Conversations</small></div>
+  <div class="scroll"><input class="f" id="q" placeholder="Search conversations..." oninput="renderMem()"><div id="memlist"></div>
+  <div style="text-align:center"><button class="btn red" id="delall" onclick="delAll()">Delete all</button></div></div>
+</section>
+<!-- TOOLS -->
+<section class="screen" id="s-tools">
+  <div class="hdr"><h2>Tools & Permissions</h2><small>EVA • You're in control</small></div>
+  <div class="scroll" id="tools"></div>
+</section>
+<!-- SETTINGS -->
+<section class="screen" id="s-set">
+  <div class="hdr"><h2>Settings</h2><small>EVA • Profile</small></div>
+  <div class="scroll" id="settings"></div>
+</section>
+<nav>
+  <button class="on" data-t="chat"><span>💬</span><b style="font-weight:400" id="chatlbl">Chat</b></button>
+  <button data-t="mem"><span>🕘</span>Memory</button>
+  <button data-t="tools"><span>🛠</span>Tools</button>
+  <button data-t="set"><span>⚙</span>Settings</button>
+</nav>
+</div>
+
+<!-- ONBOARDING -->
+<div class="overlay" id="onb">
+  <div style="text-align:center"><img src="data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%2305101f'/%3E%3Cpath d='M50 10 58 42 90 50 58 58 50 90 42 58 10 50 42 42Z' fill='none' stroke='%23bfe9ff' stroke-width='2'/%3E%3C/svg%3E" style="width:92px;height:92px;border-radius:22px;box-shadow:0 0 14px var(--blue)"><h1 style="letter-spacing:6px;font-size:28px;margin:8px 0 2px">EVA</h1><div style="color:var(--soft);margin-bottom:14px">Let's set you up</div></div>
+  <div class="glass br" style="width:100%;max-width:440px">
+    <div class="lbl" style="margin-top:0">YOUR NAME (REQUIRED)</div><input class="f" id="o-name" placeholder="What should I call you?">
+    <div class="lbl">GENDER (OPTIONAL)</div><div id="o-gender"></div>
+    <div class="lbl">LANGUAGE</div><div id="o-lang"></div>
+    <div class="lbl">EVA'S VOICE</div><div id="o-voice"></div>
+  </div>
+  <button class="btn" style="margin-top:16px" onclick="finishOnb()">Start</button><div id="o-err" style="color:var(--gray);font-size:12px"></div>
+</div>
+
+<!-- LIVE VOICE -->
+<div class="overlay" id="live">
+  <img src="data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%2305101f'/%3E%3Cpath d='M50 10 58 42 90 50 58 58 50 90 42 58 10 50 42 42Z' fill='none' stroke='%23bfe9ff' stroke-width='2'/%3E%3C/svg%3E" onclick="interrupt()" alt="EVA">
+  <h2 id="live-state" style="margin:22px 0 8px;font-size:22px">Listening...</h2>
+  <div class="wave" id="wave2" style="width:80%;height:40px"></div>
+  <div id="live-hint" style="color:var(--soft);font-size:13px;margin-top:12px">🎙 Mic is on</div>
+  <div id="live-text" style="margin-top:14px;text-align:center;max-width:420px"></div>
+  <div style="display:flex;gap:40px;margin-top:40px"><button class="circ" id="mute" onclick="toggleMute()">🎙</button><button class="circ red" onclick="endLive()">✕</button></div>
+</div>
+
+<!-- RENAME -->
+<div class="modal" id="m-ren"><div class="glass br"><b>Rename chat</b><input class="f" id="ren-in" style="margin-top:10px"><button class="btn" id="ren-ok">Save</button><button class="btn" onclick="$('#m-ren').classList.remove('on')">Cancel</button></div></div>
+<div id="toast"></div>
+
+<script>
+const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
+const LS={get:(k,d)=>{try{const v=localStorage.getItem('eva2:'+k);return v?JSON.parse(v):d}catch{return d}},set:(k,v)=>localStorage.setItem('eva2:'+k,JSON.stringify(v))};
+const DEFAULT_KEY='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';           // personal-use shortcut. See Settings to use a backend instead.
+const MODELS=['openai/gpt-oss-120b','openai/gpt-oss-20b'];
+const LANGS=[['English','en-GB'],['English (US)','en-US'],['Français','fr-FR'],['Español','es-ES'],['Português','pt-PT'],['Deutsch','de-DE'],['Italiano','it-IT'],['العربية','ar-SA'],['हिन्दी','hi-IN'],['Kiswahili','sw-KE'],['中文','zh-CN']];
+const DEF={name:'',gender:'',language:'en-GB',voice:'',city:'',savage:'balanced',cooldown:5,wake:false,backend:'',key:'',briefing:{on:false,h:6,m:0},alarm:{on:false,h:7,m:0},contacts:[]};
+let P=Object.assign({},DEF,LS.get('profile',{}));
+let chat=null, SV=Object.assign({strikes:0,pausedUntil:0,checkIn:false},LS.get('sv',{}));
+let mode='idle', busy=false, muted=false, phase='ready', level=0, rec=null, gotFinal=false, pendingCall=null, ctrl=null;
+const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,5);
+const savaP=()=>LS.set('profile',P), saveSV=()=>LS.set('sv',SV);
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+function toast(t,ms=3200){const e=$('#toast');e.textContent=t;e.style.display='block';clearTimeout(toast.t);toast.t=setTimeout(()=>e.style.display='none',ms)}
+
+// ---------- background city + waveforms ----------
+(function(){let s='';[[0,120,34],[40,90,28],[74,150,40],[120,70,30],[156,130,36],[198,100,26],[230,170,44],[280,85,32],[318,140,38],[362,95,34]].forEach(([x,h,w])=>{s+=`<rect x="${x}" y="${300-h}" width="${w}" height="${h}"/>`;for(let k=1;k<h/20;k++)s+=`<line x1="${x}" x2="${x+w}" y1="${300-h+k*20-8}" y2="${300-h+k*20-8}" stroke-width=".4"/>`});$('#city').innerHTML=s})();
+const FAC=[...Array(30)].map((_,i)=>.35+.65*Math.abs(Math.sin(i*1.7)));
+['#wave','#wave2'].forEach(id=>$(id).innerHTML=FAC.map(()=>'<i></i>').join(''));
+(function loop(t){
+  let l=level; if(phase==='processing'||phase==='speaking') l=.25+.35*Math.abs(Math.sin(t/260));
+  level*=.9;
+  ['#wave','#wave2'].forEach(id=>{[...$(id).children].forEach((b,i)=>b.style.transform=`scaleY(${Math.max(.08,Math.min(1,l*FAC[i]*(1+.3*Math.sin(t/120+i))))})`)});
+  requestAnimationFrame(loop)})(0);
+
+// ---------- persona ----------
+const MODE={gentle:'Tone: extra kind and soft. No teasing.',balanced:'Tone: warm and witty. Light, friendly teasing is fine when the mood is playful.',savage:"Tone: bold, sarcastic and sharp-tongued. Playful roasts are welcome when the user is joking around. Never be cruel about someone's body, health, family, religion, race or tribe."};
+function system(){return `You are EVA, an AI assistant made by Cee_X Technology, speaking with ${P.name||'the user'}.
+Personality: intelligent, confident, calm, elegant, witty and warm, with a touch of sass when it fits. Sound human and natural: use contractions, vary your rhythm, no corporate phrases like "How can I assist you". Use an emoji now and then when it fits, not every sentence.
+${MODE[P.savage]||MODE.balanced}
+Answer the question first. Be concise for simple questions, use short point-by-point answers for complex ones. Ask a follow-up question when it genuinely helps.
+Be transparent that you are an AI if it comes up. Never claim to have done something on the phone (called, set an alarm, sent a message) unless the app told you it happened.
+Replies are often read aloud, so avoid markdown symbols, tables and long lists unless asked.
+Language: reply in the language the user writes in; default to the language with code ${P.language}.
+Memory: you only know what is in this conversation. Never invent past conversations or memories. If asked what you remember and there is nothing here, say so honestly.
+Singing: you can write short ORIGINAL songs. For copyrighted songs never write the lyrics; offer an original song with a similar mood instead.
+Risky life choices: if the user describes a self-damaging decision, gently ask "Is this the kind of life you want to live? Ask yourself within and give me a response", explain realistic consequences, and suggest healthier alternatives.
+Seriously harmful requests (violence, weapons, hacking, abuse, self-harm methods): do not give instructions. Set a calm boundary and offer a safe alternative. If someone may be in danger or considering self-harm, respond with care and encourage them to contact local emergency services or someone they trust.
+Current date and time: ${new Date().toString()}.`}
+
+// ---------- LLM (backend if set, else Groq directly) ----------
+async function llm(messages,sys,stream,signal){
+  const be=(P.backend||'').replace(/\/$/,'');
+  if(be) return fetch(be+'/chat',{method:'POST',signal,headers:{'Content-Type':'application/json'},body:JSON.stringify({messages,system:sys,stream})});
+  const key=P.key||DEFAULT_KEY; if(!key) throw new Error('No Groq key. Add one in Settings.');
+  let r;
+  for(const model of MODELS){
+    r=await fetch('https://api.groq.com/openai/v1/chat/completions',{method:'POST',signal,headers:{'Content-Type':'application/json',Authorization:'Bearer '+key},
+      body:JSON.stringify({model,stream,temperature:.85,max_tokens:1400,reasoning_effort:'low',messages:[{role:'system',content:sys},...messages]})});
+    if(r.status!==404) break;
+  }
+  return r;
+}
+async function streamChat(messages,onDelta,signal){
+  const t=new AbortController(), to=setTimeout(()=>t.abort(),45000); signal&&signal.addEventListener('abort',()=>t.abort());
+  try{
+    const r=await llm(messages.filter(m=>!m.failed&&m.content).slice(-16).map(m=>({role:m.role,content:m.content})),system(),true,t.signal);
+    if(!r.ok) throw new Error(r.status===401?'The AI key was rejected (401).':r.status===429?'Too many requests. Give me a second.':'Server error '+r.status);
+    const rd=r.body.getReader(), dec=new TextDecoder(); let buf='',full='';
+    for(;;){const {done,value}=await rd.read(); if(done)break; buf+=dec.decode(value,{stream:true});
+      const lines=buf.split('\n'); buf=lines.pop();
+      for(const ln of lines){const s=ln.trim(); if(!s.startsWith('data:'))continue; const d=s.slice(5).trim(); if(d==='[DONE]')continue;
+        try{const x=JSON.parse(d).choices?.[0]?.delta?.content; if(x){full+=x;onDelta(full)}}catch{}}}
+    return full.replace(/<think>[\s\S]*?<\/think>/g,'').trim();
+  }catch(e){
+    if(e.name==='AbortError') throw new Error(signal&&signal.aborted?'cancelled':'That took too long. Check your connection and try again.');
+    if(/Failed to fetch|NetworkError|Load failed/i.test(e.message)) throw new Error(navigator.onLine?"I can't reach the AI server right now.":"You're offline. I'll be here when you're back.");
+    throw e;
+  }finally{clearTimeout(to)}
+}
+async function oneShot(text,sys){
+  try{const old=P.language;const r=await llm([{role:'user',content:text}],sys,false);if(!r.ok)return null;const j=await r.json();return (j.text||j.choices?.[0]?.message?.content||'').trim()}catch{return null}
+}
+
+// ---------- chats ----------
+const allChats=()=>LS.get('chats',[]);
+function saveChat(){ if(!chat||!chat.messages.some(m=>m.role==='user'))return; const a=allChats().filter(c=>c.id!==chat.id); a.unshift(chat); LS.set('chats',a.slice(0,300)); }
+function newChat(){chat={id:'c'+Date.now(),title:'New chat',updated:Date.now(),messages:[]}}
+async function autoTitle(){
+  if(!chat||chat.title!=='New chat')return; const u=chat.messages.find(m=>m.role==='user'), a=chat.messages.find(m=>m.role==='assistant'&&m.content&&!m.failed&&m.ts>=u.ts); if(!u||!a)return;
+  const id=chat.id, t=await oneShot(u.content.slice(0,300)+'\n'+a.content.slice(0,200),'Reply with ONLY a 2 to 5 word title for this conversation. No quotes, no ending punctuation.');
+  if(t&&chat&&chat.id===id&&chat.title==='New chat'){chat.title=t.replace(/["\n]/g,'').slice(0,60);saveChat()}
+}
+function mkMsg(role,content,extra){return Object.assign({id:uid(),role,content,ts:Date.now()},extra||{})}
+function addMsg(role,content,extra){const m=mkMsg(role,content,extra);chat.messages.push(m);chat.updated=Date.now();drawMsg(m);saveChat();return m}
+function timeStr(ts){return new Date(ts).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit',hour12:false})}
+function drawMsg(m,replaceEl){
+  const d=document.createElement('div'); d.className='m '+(m.role==='user'?'u':'e'); d.dataset.id=m.id;
+  d.innerHTML=`<div class="glass ${m.role==='user'?'':'br'} ${m.failed?'err':''}"></div><div class="meta"><span>${timeStr(m.ts)}</span><button title="Copy">⧉</button>${m.role==='assistant'?'<button title="Retry">↻</button>':''}</div>`;
+  d.firstChild.textContent=m.content||'…';
+  const b=d.querySelectorAll('button'); b[0].onclick=()=>{navigator.clipboard&&navigator.clipboard.writeText(m.content).then(()=>toast('Copied'))}; if(b[1]) b[1].onclick=retry;
+  if(replaceEl) replaceEl.replaceWith(d); else $('#chat').appendChild(d);
+  $('#chat').scrollTop=1e9; return d;
+}
+function redrawChat(){ $('#chat').innerHTML=''; chat.messages.forEach(m=>drawMsg(m)); }
+
+// ---------- voice ----------
+let voices=[]; const loadVoices=()=>{voices=speechSynthesis.getVoices();renderOnbVoices();if($('#settings').children.length)renderSettings()}; speechSynthesis.onvoiceschanged=loadVoices;
+const forLang=l=>voices.filter(v=>v.lang.toLowerCase().startsWith(l.slice(0,2).toLowerCase()));
+function bestVoice(){
+  const l=forLang(P.language); if(P.voice){const v=voices.find(v=>v.voiceURI===P.voice);if(v)return v}
+  return l.find(v=>/en-GB/i.test(v.lang)&&/female|libby|sonia|hazel|susan|serena|google uk english female/i.test(v.name))||l.find(v=>/female|samantha|zira|aria|jenny/i.test(v.name))||l[0];
+}
+let speakDone=null;
+function speak(text,done){
+  speechSynthesis.cancel(); speakDone=done;
+  const u=new SpeechSynthesisUtterance(text.replace(/[*_#`>]/g,'').replace(/^- /gm,'')); const v=bestVoice(); if(v)u.voice=v; u.lang=P.language; u.pitch=1.08;
+  let fired=false; const fin=()=>{if(fired)return;fired=true;done&&done()}; u.onend=u.onerror=fin; speechSynthesis.speak(u);
+}
+const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+function setPhase(p,err){
+  phase=p; const names={ready:'Ready',listening:'Listening...',processing:'Processing...',speaking:'Speaking...',error:err||'Something went wrong'};
+  $('#phase').textContent=names[p]; $('#lrow').classList.toggle('err',p==='error');
+  $('#live-state').textContent=muted&&mode==='live'?'Muted':names[p]; $('#live').classList.toggle('speaking',p==='speaking');
+  $('#live-hint').textContent=p==='speaking'?'Tap the star to interrupt':muted?'Mic is off':'🎙 Mic is on';
+}
+function listen(continuous){
+  if(!SR){setPhase('error','Speech recognition is not supported in this browser. Use Chrome.');return}
+  try{rec&&(rec.onend=null,rec.abort())}catch{}
+  rec=new SR(); rec.lang=P.language; rec.interimResults=true; rec.continuous=!!continuous; gotFinal=false;
+  rec.onstart=()=>{if(mode!=='wake')setPhase('listening')};
+  rec.onspeechstart=rec.onsoundstart=()=>{level=.7};
+  rec.onresult=e=>{
+    level=.5+Math.random()*.5;
+    const t=[...e.results].map(r=>r[0].transcript).join(' ');
+    if(mode==='wake'){ if(/\bhey,?\s*(eva|eve|ava)\b/i.test(t)){ mode='live'; try{rec.onend=null;rec.abort()}catch{} openLive(); const hi=`Hey ${P.name} what can I help you with?`; addMsg('assistant',hi); setPhase('speaking'); speak(hi,()=>{if(mode==='live'&&!muted)listen(false)}); } return; }
+    $('#inp').value=t; $('#live-text').textContent=t;
+    if(e.results[e.results.length-1].isFinal&&t.trim()){gotFinal=true;try{rec.onend=null;rec.stop()}catch{};send(t,true)}
+  };
+  rec.onerror=e=>{ if(e.error==='no-speech'||e.error==='aborted')return;
+    const msg=e.error==='not-allowed'?'Microphone is blocked. You can still type to me.':'Speech error: '+e.error; setPhase('error',msg); if(mode==='live')endLive(true)};
+  rec.onend=()=>{
+    if(mode==='wake'){setTimeout(()=>mode==='wake'&&listen(true),500);return}
+    if(mode==='live'&&!gotFinal&&!busy&&!muted) setTimeout(()=>mode==='live'&&!busy&&listen(false),300);
+    else if(!busy&&phase==='listening') setPhase('ready');
+  };
+  try{rec.start()}catch{}
+}
+function openLive(){$('#live').classList.add('on')}
+function startLive(){ if(SV.pausedUntil>Date.now())return toast('EVA is paused for a moment.'); speechSynthesis.cancel(); mode='live';muted=false;$('#mute').textContent='🎙';openLive();listen(false)}
+function endLive(keepErr){ mode='idle'; if(ctrl)ctrl.abort(); speechSynthesis.cancel(); try{rec&&(rec.onend=null,rec.abort())}catch{} busy=false; $('#live').classList.remove('on'); $('#live-text').textContent=''; if(!keepErr)setPhase('ready'); syncWake()}
+function toggleMute(){muted=!muted;$('#mute').textContent=muted?'🔇':'🎙';$('#mute').classList.toggle('red',muted);if(muted){try{rec&&(rec.onend=null,rec.abort())}catch{};}else if(phase!=='speaking'&&!busy)listen(false);setPhase(phase)}
+function interrupt(){ if(phase!=='speaking')return; speechSynthesis.cancel(); speakDone=null; busy=false; if(!muted)listen(false); else setPhase('ready')}
+function syncWake(){
+  if(P.wake&&mode==='idle'&&document.visibilityState==='visible'&&SR){mode='wake';listen(true)}
+  else if(mode==='wake'&&!P.wake){mode='idle';try{rec&&(rec.onend=null,rec.abort())}catch{};setPhase('ready')}
+}
+document.addEventListener('visibilitychange',()=>{ if(document.visibilityState==='hidden'){saveChat(); if(mode==='wake'){mode='idle';try{rec&&(rec.onend=null,rec.abort())}catch{}}} else syncWake()});
+window.addEventListener('pagehide',saveChat);
+window.addEventListener('online',()=>$('#status').textContent='AI Assistant • Online');
+window.addEventListener('offline',()=>$('#status').textContent='AI Assistant • Offline');
+
+// ---------- sending ----------
+const ABUSE=/\b(stupid|idiot|dumb|useless|worthless|moron|trash|garbage|shut\s*up|f+u+c+k+\s*(you|off)|bitch|bastard|asshole|imbecile|fool)\b/i;
+const LOVE=/\bi\s*(really\s*)?(love|luv)\s*(you|u|ya)\b/i;
+function finish(text,voiceOn){
+  busy=false;
+  if(voiceOn||mode==='live'){ setPhase('speaking'); speak(text,()=>{ if(mode==='live'&&!muted)listen(false); else {setPhase('ready');syncWake()} }) }
+  else {setPhase('ready')}
+}
+function reply(text,voiceOn){addMsg('assistant',text);finish(text,voiceOn)}
+async function send(raw,byVoice){
+  const text=(raw!==undefined?raw:$('#inp').value).trim(); if(!text||busy)return;
+  if(SV.pausedUntil>Date.now())return;
+  $('#inp').value=''; $('#b-offer').classList.remove('on'); speechSynthesis.cancel();
+  const voiceOn=!!byVoice||mode==='live';
+  if(mode==='wake'){mode='idle';try{rec.onend=null;rec.abort()}catch{}}
+  addMsg('user',text); busy=true; setPhase('processing');
+  if(ABUSE.test(text)){ SV.strikes++;saveSV(); if(SV.strikes===1)return reply("Hey, there's no need to speak to me like that. Let's keep things respectful.",voiceOn);
+    $('#b-offer-t').textContent=`Take a ${P.cooldown}-minute pause?`;$('#b-offer').classList.add('on');
+    return reply(`I'd like us to reset. Want to take a ${P.cooldown}-minute pause? You can still use settings and your tools meanwhile.`,voiceOn)}
+  if(LOVE.test(text)) return reply("I'm just an AI 🤭, but I appreciate the kindness!",voiceOn);
+  const t=await tools(text); if(t) return reply(t,voiceOn);
+  await askAI(voiceOn);
+}
+async function askAI(voiceOn){
+  const m=mkMsg('assistant',''); chat.messages.push(m); let el=drawMsg(m); ctrl=new AbortController();
+  try{
+    const final=await streamChat(chat.messages.slice(0,-1),full=>{m.content=full;el.firstChild.textContent=full;$('#chat').scrollTop=1e9},ctrl.signal)||m.content||'I lost my train of thought. Say that again?';
+    m.content=final; m.ts=Date.now(); chat.updated=Date.now(); el.firstChild.textContent=final; saveChat(); finish(final,voiceOn); autoTitle();
+  }catch(e){
+    if(e.message==='cancelled'){chat.messages.pop();el.remove();busy=false;setPhase('ready');return}
+    m.content=e.message;m.failed=true; el=drawMsg(m,el); busy=false; setPhase('error',e.message); if(mode==='live')endLive(true);
+  }
+}
+function retry(){
+  if(busy)return; chat.messages=chat.messages.filter(m=>!m.failed);
+  while(chat.messages.length&&chat.messages[chat.messages.length-1].role==='assistant')chat.messages.pop();
+  if(!chat.messages.length)return; redrawChat(); busy=true; setPhase('processing'); askAI(false);
+}
+$('#inp').addEventListener('keydown',e=>{if(e.key==='Enter')send()});
+
+// ---------- tools: calls, alarm, briefing ----------
+function tools(text){
+  if(pendingCall){
+    const pc=pendingCall; pendingCall=null;
+    if(/^\s*(cancel|never ?mind|no)\b/i.test(text)) return 'Okay, cancelled.';
+    const n=parseInt(text.replace(/\D/g,''),10)||0; const pick=pc[n-1]||pc.find(c=>text.toLowerCase().includes(c.name.toLowerCase()));
+    if(pick) return dial(pick);
+  }
+  let m=text.match(/^\s*(?:please\s+)?(?:call|phone|ring|dial)\s+(.+?)\s*[.?!]*$/i);
+  if(m){
+    const who=m[1].toLowerCase(), hits=P.contacts.filter(c=>c.name.toLowerCase().includes(who)||who.includes(c.name.toLowerCase()));
+    if(!P.contacts.length) return "I don't have any contacts yet. Add or import some in the Tools tab and I'll call them for you.";
+    if(!hits.length) return `I couldn't find ${m[1]} in your contacts. Check the spelling, or add them in the Tools tab.`;
+    if(hits.length>1){pendingCall=hits.slice(0,6);return 'I found a few matches. Which one should I call?\n'+pendingCall.map((c,i)=>`${i+1}. ${c.name} (${c.number})`).join('\n')}
+    return dial(hits[0]);
+  }
+  m=text.match(/\b(?:alarm|wake me).*?\b(?:at|for)\s+(\d{1,2})(?::(\d{2}))?\s*(am|pm)?/i);
+  if(m&&/alarm|wake me/i.test(text)){let h=+m[1];const mi=m[2]?+m[2]:0,ap=(m[3]||'').toLowerCase();if(ap==='pm'&&h<12)h+=12;if(ap==='am'&&h===12)h=0;if(h<24&&mi<60)return openAlarm(h,mi)}
+  if(/\b(morning )?briefing\b/i.test(text)) return briefing();
+  return null;
+}
+function dial(c){ setTimeout(()=>{location.href='tel:'+c.number.replace(/\s/g,'')},400); return `Opening your dialer for ${c.name}. Tap the call button to place it.` }
+const p2=n=>String(n).padStart(2,'0');
+function openAlarm(h,m){
+  if(!/Android/i.test(navigator.userAgent)) return "Alarms only work from an Android phone. Open EVA in Chrome on your phone.";
+  const url=`intent:#Intent;action=android.intent.action.SET_ALARM;i.android.intent.extra.alarm.HOUR=${h};i.android.intent.extra.alarm.MINUTES=${m};S.android.intent.extra.alarm.MESSAGE=${encodeURIComponent('Rise and Shine '+P.name+'!')};B.android.intent.extra.alarm.SKIP_UI=true;end`;
+  setTimeout(()=>{location.href=url},400);
+  return `Asking your Clock app to set ${p2(h)}:${p2(m)}. I can't see its answer from a web page, so please check the Clock app to be sure it saved.`;
+}
+const WX={0:'clear skies',1:'mostly clear',2:'partly cloudy',3:'overcast',45:'foggy',48:'foggy',51:'light drizzle',53:'drizzle',55:'heavy drizzle',61:'light rain',63:'rain',65:'heavy rain',80:'rain showers',81:'rain showers',82:'heavy showers',95:'thunderstorms',96:'thunderstorms',99:'thunderstorms'};
+async function briefing(){
+  const parts=[];
+  if(P.city){ try{
+    const g=await (await fetch('https://geocoding-api.open-meteo.com/v1/search?count=1&name='+encodeURIComponent(P.city))).json(); const loc=g.results&&g.results[0];
+    if(loc){const w=await (await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${loc.latitude}&longitude=${loc.longitude}&current=temperature_2m,weather_code`)).json();
+      parts.push(`${Math.round(w.current.temperature_2m)}°C with ${WX[w.current.weather_code]||'mixed weather'} in ${loc.name}`)}
+  }catch{} }
+  return `Good morning, ${P.name}. `+(parts.length?parts.join('. ')+'. ':'I couldn\'t get the weather (add a city in Settings). ')+"I can't see your calendar or email from a web page, so I won't guess about those.";
+}
+let briefT=null;
+function scheduleBriefing(){
+  clearTimeout(briefT); if(!P.briefing.on)return; const d=new Date();d.setHours(P.briefing.h,P.briefing.m,0,0); if(d<=Date.now())d.setDate(d.getDate()+1);
+  briefT=setTimeout(async()=>{const t=await briefing();toast(t,12000);try{new Notification('Good morning, '+P.name,{body:t})}catch{} addMsg('assistant',t);scheduleBriefing()},Math.min(d-Date.now(),2147483000));
+}
+
+// ---------- savage pause timer ----------
+setInterval(()=>{
+  const left=SV.pausedUntil-Date.now();
+  if(SV.pausedUntil&&left<=0){SV.pausedUntil=0;SV.checkIn=true;saveSV();addMsg('assistant','Are we good now? 😊')}
+  $('#b-pause-on').classList.toggle('on',SV.pausedUntil>0&&left>0);
+  if(left>0){const s=Math.ceil(left/1000);$('#b-pause-t').textContent=`Paused • back in ${Math.floor(s/60)}:${p2(s%60)}`}
+  $('#b-check').classList.toggle('on',!!SV.checkIn&&!SV.pausedUntil);
+  $('#inp').disabled=SV.pausedUntil>0&&left>0;
+},1000);
+$('#b-pause').onclick=()=>{SV.pausedUntil=Date.now()+P.cooldown*60000;SV.strikes=0;saveSV();$('#b-offer').classList.remove('on');addMsg('assistant',`Okay, see you in ${P.cooldown} min. Settings and Tools still work.`)};
+$('#b-keep').onclick=()=>$('#b-offer').classList.remove('on');
+$('#b-yes').onclick=()=>{SV.checkIn=false;SV.strikes=0;saveSV();addMsg('assistant','All good. 😊 Now, where were we?')};
+$('#b-no').onclick=()=>{SV.checkIn=false;saveSV();addMsg('assistant',"That's okay. No pressure. I'm here whenever you're ready.")};
+
+// ---------- navigation ----------
+function tab(t){
+  if(t==='chat'&&$('#s-chat').classList.contains('on')&&chat.messages.some(m=>m.role==='user')){saveChat();newChat();redrawChat();greet()}
+  $$('.screen').forEach(s=>s.classList.remove('on'));$('#s-'+t).classList.add('on');
+  $$('nav button').forEach(b=>b.classList.toggle('on',b.dataset.t===t));
+  $('#chatlbl').textContent=t==='chat'?'New chat':'Chat';
+  if(t==='mem')renderMem(); if(t==='tools')renderTools(); if(t==='set')renderSettings();
+}
+$$('nav button').forEach(b=>b.onclick=()=>tab(b.dataset.t));
+function greet(){ if(!chat.messages.length)addMsg('assistant',`Hello ${P.name}, How can I assist you today?`) }
+
+// ---------- memory screen ----------
+function renderMem(){
+  const q=$('#q').value.toLowerCase(), a=allChats().filter(c=>!q||(c.title+' '+c.messages.map(m=>m.content).join(' ')).toLowerCase().includes(q));
+  $('#delall').style.display=allChats().length?'inline-block':'none';
+  $('#memlist').innerHTML=a.length?'':`<p style="color:var(--soft);text-align:center;margin-top:40px;line-height:1.6">${allChats().length?'No conversations match your search.':"I don't have any saved conversations yet. Chat with me and I'll keep them here."}</p>`;
+  a.forEach(c=>{const d=document.createElement('div');d.className='glass br mem';const last=c.messages[c.messages.length-1];
+    d.innerHTML=`<b></b><p></p><div class="r"><span>${new Date(c.updated).toLocaleString()} • ${c.messages.length} messages</span><button>✏️</button><button>🗑</button></div>`;
+    d.querySelector('b').textContent=c.title;d.querySelector('p').textContent=last?last.content:'';
+    d.onclick=()=>{saveChat();chat=c;redrawChat();tab('chat')};
+    const b=d.querySelectorAll('button');
+    b[0].onclick=e=>{e.stopPropagation();$('#ren-in').value=c.title;$('#m-ren').classList.add('on');$('#ren-ok').onclick=()=>{const v=$('#ren-in').value.trim();if(v){const all=allChats().map(x=>x.id===c.id?{...x,title:v}:x);LS.set('chats',all);if(chat.id===c.id)chat.title=v}$('#m-ren').classList.remove('on');renderMem()}};
+    b[1].onclick=e=>{e.stopPropagation();if(confirm('Delete this chat?\n'+c.title)){LS.set('chats',allChats().filter(x=>x.id!==c.id));if(chat.id===c.id){newChat();redrawChat();greet()}renderMem()}};
+    $('#memlist').appendChild(d)});
+}
+function delAll(){ if(confirm('Delete ALL chats? This cannot be undone.')){LS.set('chats',[]);newChat();redrawChat();greet();renderMem()} }
+
+// ---------- tools screen ----------
+async function permState(name){try{return (await navigator.permissions.query({name})).state}catch{return 'unknown'}}
+async function renderTools(){
+  const mic=await permState('microphone'), noti=('Notification' in window)?Notification.permission:'unsupported';
+  const hasPicker='contacts' in navigator&&'ContactsManager' in window;
+  const stat=(s,on='granted')=>`<span class="st ${s===on?'on':s==='denied'?'bad':''}">${s==='granted'?'On':s==='denied'?'Blocked':s==='unsupported'?'Not available':s==='n/a'?'Not available here':'Off'}</span>`;
+  const card=(title,st,desc,extra='')=>`<div class="glass br card"><h3>${title}${st}</h3><p>${desc}</p>${extra}</div>`;
+  $('#tools').innerHTML=`<p style="color:var(--soft);font-size:13px;line-height:1.5;margin-top:0">EVA only asks when you use a feature. Say no to everything and she still works as a chat AI. This is the web version, so some phone features are limited, and I say so on each card.</p>`+
+   card('Microphone',stat(mic),'Lets you talk to EVA. It listens only while the mic screen is open, or in "Hey EVA" mode while this page is open.',`<button class="btn sm" onclick="askMic()">Enable</button><button class="btn sm" onclick="toast('Turn it off in Chrome: tap the lock icon in the address bar, then Permissions.',6000)">How to turn off</button>`)+
+   card('Contacts',`<span class="st ${P.contacts.length?'on':''}">${P.contacts.length} saved</span>`,'EVA keeps a small address book inside this app. A web page cannot read your phone contacts silently, so you add or import the ones you want her to call. Nothing is uploaded.',
+     `<div id="ctl">${P.contacts.map((c,i)=>`<div style="display:flex;justify-content:space-between;font-size:13px;margin:4px 0"><span>${esc(c.name)} • ${esc(c.number)}</span><button class="btn sm red" onclick="delContact(${i})">✕</button></div>`).join('')}</div>
+      <input class="f" id="cn" placeholder="Name (e.g. Mum)"><input class="f" id="cp" placeholder="Phone number" inputmode="tel"><button class="btn sm" onclick="addContact()">Add</button>${hasPicker?'<button class="btn sm" onclick="importContacts()">Import from phone</button>':''}`)+
+   card('Phone',`<span class="st on">Dialer</span>`,'Say "call Mum". EVA opens your dialer with the number ready. A web page cannot press call for you, so you tap it.')+
+   card('Notifications',stat(noti),'Used for the morning briefing. In a web page this only works while EVA is open.',`<button class="btn sm" onclick="askNoti()">Enable</button>`)+
+   card('Morning briefing',`<span class="st ${P.briefing.on?'on':''}">${P.briefing.on?p2(P.briefing.h)+':'+p2(P.briefing.m):'Off'}</span>`,'Weather for your city (set it in Settings). Only while this page is open. Calendar and Gmail are not available in the web version, so EVA never guesses about them. For a real 6 AM push you need the Android app.',
+     `<button class="btn sm" onclick="togBrief()">${P.briefing.on?'Turn off':'Turn on'}</button><button class="btn sm" onclick="shiftT('briefing',-15)">−15m</button><button class="btn sm" onclick="shiftT('briefing',15)">+15m</button><button class="btn sm" onclick="runBrief()">Brief me now</button>`)+
+   card('Alarm',`<span class="st">${P.alarm.on?'Last: '+p2(P.alarm.h)+':'+p2(P.alarm.m):'Off'}</span>`,'Uses your phone\'s Clock app, so it rings even when EVA is closed. Label: "Rise and Shine '+esc(P.name)+'!" The web page cannot confirm the Clock app saved it, so check it. Or just say "set an alarm for 7am".',
+     `<button class="btn sm" onclick="setAlarmNow()">Set ${p2(P.alarm.h)}:${p2(P.alarm.m)}</button><button class="btn sm" onclick="shiftT('alarm',-15)">−15m</button><button class="btn sm" onclick="shiftT('alarm',15)">+15m</button>`)+
+   card('Files',`<span class="st">On request</span>`,'Add a text file and EVA summarizes it. The file is sent to the AI only when you tap Summarize.',`<button class="btn sm" onclick="$('#fp').click()">Choose file</button><input type="file" id="fp" hidden onchange="pickFile(this)">`)+
+   card('File watcher',stat('n/a'),'Not available in a web page. Browsers cannot watch your Downloads folder. The Android app can watch a folder you choose.')+
+   card('Camera',stat('n/a'),'Not used. EVA does not touch your camera.')+
+   card('Notification reading (WhatsApp, Gmail, SMS)',stat('n/a'),'Not possible from a web page. It needs a native Android service. EVA does not read your notifications.')+
+   card('Floating bubble',stat('n/a'),'Not possible from a web page. It needs the "display over other apps" permission in a native app.');
+}
+async function askMic(){ if(!confirm('EVA needs the mic to hear you during voice chat. Continue?'))return; try{(await navigator.mediaDevices.getUserMedia({audio:true})).getTracks().forEach(t=>t.stop())}catch{toast('Mic was not allowed. You can still type.')} renderTools() }
+async function askNoti(){ if(!('Notification' in window))return toast('This browser does not support notifications.'); if(!confirm('EVA will send your morning briefing as a notification. Continue?'))return; await Notification.requestPermission(); renderTools() }
+function addContact(){const n=$('#cn').value.trim(),p=$('#cp').value.trim();if(!n||!p)return toast('Enter a name and number.');P.contacts.push({name:n,number:p});savaP();renderTools()}
+function delContact(i){P.contacts.splice(i,1);savaP();renderTools()}
+async function importContacts(){ if(!confirm('Pick the contacts you want EVA to be able to call. Only the ones you pick are imported.'))return;
+  try{const r=await navigator.contacts.select(['name','tel'],{multiple:true});r.forEach(c=>{(c.tel||[]).forEach(t=>{const nm=(c.name&&c.name[0])||'Unknown';if(!P.contacts.some(x=>x.name===nm&&x.number===t))P.contacts.push({name:nm,number:t})})});savaP();renderTools()}catch{toast('Import cancelled.')} }
+function shiftT(k,d){const o=P[k],t=(o.h*60+o.m+d+1440)%1440;o.h=Math.floor(t/60);o.m=t%60;savaP();scheduleBriefing();renderTools()}
+function togBrief(){P.briefing.on=!P.briefing.on;savaP();scheduleBriefing();renderTools()}
+async function runBrief(){const t=await briefing();addMsg('assistant',t);tab('chat')}
+function setAlarmNow(){const r=openAlarm(P.alarm.h,P.alarm.m);P.alarm.on=true;savaP();toast(r,7000)}
+function pickFile(inp){const f=inp.files[0];if(!f)return; if(!confirm(`Send the text of "${f.name}" to the AI so it can summarize it?`))return;
+  f.text().then(t=>{tab('chat');send(`Please summarize this file called "${f.name}":\n\n${t.slice(0,12000)}`)}).catch(()=>toast('I could only read plain text files.'))}
+
+// ---------- settings screen ----------
+function chips(items,cur,fn){return items.map(([l,v])=>`<span class="chip ${cur===v?'on':''}" onclick="${fn}('${String(v).replace(/'/g,"\\'")}')">${esc(l)}</span>`).join('')}
+function renderSettings(){
+  const vs=forLang(P.language).slice(0,10).map(v=>[v.name,v.voiceURI]);
+  $('#settings').innerHTML=`
+  <div class="glass br"><div class="lbl" style="margin-top:0">PROFILE</div>
+    <input class="f" id="s-name" value="${esc(P.name)}" placeholder="Your name" onchange="P.name=this.value.trim()||P.name;savaP()">
+    <input class="f" id="s-city" value="${esc(P.city)}" placeholder="City (for weather in your briefing)" onchange="P.city=this.value.trim();savaP()">
+    <div class="lbl">LANGUAGE</div>${chips(LANGS,P.language,'setLang')}
+    <div class="lbl">VOICE</div>${vs.length?chips(vs,P.voice,'setVoice'):'<span style="color:var(--soft);font-size:13px">No extra voices installed for this language.</span>'}</div>
+  <div class="glass br" style="margin-top:14px"><div class="lbl" style="margin-top:0">SAVAGE MODE</div>${chips([['Gentle','gentle'],['Balanced','balanced'],['Savage','savage']],P.savage,'setSav')}
+    <p style="color:var(--soft);font-size:13px;line-height:1.5;margin:0">Sets how cheeky EVA is. If you're rude to her she'll warn you once, then offer a pause.</p>
+    <div class="lbl">PAUSE LENGTH</div>${chips([['1 min',1],['5 min',5],['10 min',10],['30 min',30]],P.cooldown,'setCool')}</div>
+  <div class="glass br" style="margin-top:14px"><div style="display:flex;justify-content:space-between;align-items:center"><b>"Hey EVA" wake word</b>
+    <input type="checkbox" ${P.wake?'checked':''} onchange="P.wake=this.checked;savaP();syncWake()" style="width:22px;height:22px;accent-color:#00D4FF"></div>
+    <p style="color:var(--soft);font-size:13px;line-height:1.5;margin:8px 0 0">Works only while EVA is open on screen in Chrome (it uses the phone's speech recognition and some battery). It does NOT work when the page is closed or the screen is off.</p></div>
+  <div class="glass br" style="margin-top:14px"><div class="lbl" style="margin-top:0">AI CONNECTION</div>
+    <p style="color:var(--soft);font-size:13px;line-height:1.5;margin:0 0 8px">Right now EVA uses the Groq key built into this file, which anyone with the file can see. For better security, host the EVA backend and paste its URL here; then the key stays on the server.</p>
+    <input class="f" value="${esc(P.backend)}" placeholder="Backend URL (optional)" onchange="P.backend=this.value.trim();savaP()">
+    <input class="f" type="password" value="${esc(P.key)}" placeholder="Your own Groq key (optional)" onchange="P.key=this.value.trim();savaP()"></div>
+  <div style="margin-top:18px"><button class="btn red" onclick="wipe()">Delete all my data</button></div>
+  <p style="color:var(--gray);font-size:12px;text-align:center;margin-top:24px">EVA • Cee_X Technology</p>`;
+}
+function setLang(v){P.language=v;P.voice='';savaP();renderSettings()}
+function setVoice(v){P.voice=v;savaP();renderSettings();speak(`Hey ${P.name}, this is my voice.`)}
+function setSav(v){P.savage=v;savaP();renderSettings()}
+function setCool(v){P.cooldown=+v;savaP();renderSettings()}
+function wipe(){ if(confirm('Delete your profile, chats and settings from this phone?')){Object.keys(localStorage).filter(k=>k.startsWith('eva2:')).forEach(k=>localStorage.removeItem(k));location.reload()} }
+
+// ---------- onboarding ----------
+let O={gender:'',language:'en-GB',voice:''};
+function renderOnb(){ $('#o-gender').innerHTML=['Female','Male','Other','Prefer not to say'].map(g=>`<span class="chip ${O.gender===g?'on':''}" onclick="O.gender=O.gender==='${g}'?'':'${g}';renderOnb()">${g}</span>`).join('');
+  $('#o-lang').innerHTML=LANGS.map(([l,v])=>`<span class="chip ${O.language===v?'on':''}" onclick="O.language='${v}';O.voice='';renderOnb()">${l}</span>`).join(''); renderOnbVoices() }
+function renderOnbVoices(){ const el=$('#o-voice'); if(!el)return; const vs=forLang(O.language).slice(0,8);
+  el.innerHTML=vs.length?vs.map(v=>`<span class="chip ${O.voice===v.voiceURI?'on':''}" onclick="O.voice='${v.voiceURI.replace(/'/g,"\\'")}';renderOnbVoices()">${esc(v.name)}</span>`).join(''):'<span style="color:var(--soft);font-size:13px">Default voice will be used.</span>' }
+function finishOnb(){ const n=$('#o-name').value.trim(); if(!n){$('#o-err').textContent='Enter your name to continue.';return}
+  P=Object.assign({},DEF,P,{name:n,gender:O.gender,language:O.language,voice:O.voice}); savaP(); $('#onb').classList.remove('on'); boot2() }
+
+// ---------- boot ----------
+function boot2(){ if(!chat){const a=allChats();a.length?chat=a[0]:newChat()} redrawChat(); greet(); scheduleBriefing(); syncWake(); $('#status').textContent='AI Assistant • '+(navigator.onLine?'Online':'Offline') }
+loadVoices();
+if(!P.name){renderOnb();$('#onb').classList.add('on')} else boot2();
+</script>
+</body>
+</html>
