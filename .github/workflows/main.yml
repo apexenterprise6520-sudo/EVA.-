@@ -1,0 +1,27 @@
+name: Build EVA APK
+on: push
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+      - name: Install Bubblewrap
+        run: npm install -g @bubblewrap/cli
+      - name: Build APK
+        run: |
+          bubblewrap init --manifest https://va1-gamma.vercel.app/manifest.json --directory ./eva-app
+          cd eva-app
+          bubblewrap build
+      - name: Upload EVA APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: EVA-APK
+          path: eva-app/app/build/outputs/apk/release/*.apk
